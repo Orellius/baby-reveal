@@ -1,0 +1,15 @@
+/docs/
+/NORTH_STAR.md
+/PROJECT_STATE.md
+/ROADMAP.md
+/BACKLOG.md
+/checkpoints/
+/plans/
+/notes/
+/internal/
+
+.DS_Store
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
