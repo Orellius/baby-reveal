@@ -9,6 +9,9 @@
 <meta property="og:description" content="גרדו את הכרטיס וגלו">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#fbf7f2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Gveret+Levin&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fbf7f2;
@@ -16,7 +19,9 @@
     --muted: #6f6675;
     --ticket: #fffdf9;
     --ticket-line: #e6dccf;
-    --card-size: min(72vw, 340px);
+    --card-size: min(72vw, 48svh, 340px);
+    --round: "Fredoka", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    --script: "Gveret Levin", "Fredoka", -apple-system, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -35,10 +40,15 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
+    transition: background-color 1.2s ease;
   }
   header { text-align: center; }
-  h1 { margin: 0 0 8px; font-size: clamp(34px, 9vw, 48px); font-weight: 800; letter-spacing: -0.5px; }
-  .sub { margin: 0; font-size: 18px; color: var(--muted); }
+  h1 { margin: 0 0 6px; font-family: var(--round); font-size: clamp(34px, 10vw, 52px); font-weight: 700; }
+  .sub { margin: 0; font-family: var(--round); font-weight: 500; font-size: clamp(16px, 4.5vw, 19px); color: var(--muted); }
+  @media (max-height: 640px) {
+    body { gap: 16px; padding-block: 12px; }
+    h1 { font-size: 30px; }
+  }
 
   /* The printed ticket around the scratch panel. */
   .ticket {
@@ -58,6 +68,7 @@
     overflow: hidden;
     background: #ddd;
   }
+  /* Under the foil: a neutral print, so scratching gives nothing away. */
   .prize {
     position: absolute;
     inset: 0;
@@ -65,11 +76,31 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 2px;
     visibility: hidden;
+    background:
+      radial-gradient(rgba(120, 100, 70, 0.12) 1.2px, transparent 1.5px) 0 0 / 12px 12px,
+      #efe7da;
+    color: #b3a48c;
+    font-family: var(--round);
   }
-  .prize .emoji { font-size: calc(var(--card-size) * 0.3); line-height: 1.25; }
-  .prize .text { font-size: calc(var(--card-size) * 0.16); font-weight: 800; }
+  .prize .emoji { display: none; font-size: calc(var(--card-size) * 0.26); line-height: 1.25; }
+  .prize .word { font-size: calc(var(--card-size) * 0.42); font-weight: 700; line-height: 1.1; }
+  .prize.spin { color: #fff; }
+  .prize.spin .word { font-size: calc(var(--card-size) * 0.36); }
+  .prize.boom { color: #fff; animation: boom 0.7s cubic-bezier(.2, 1.6, .4, 1); }
+  .prize.boom .emoji { display: block; filter: drop-shadow(0 4px 12px rgba(80, 0, 30, 0.35)); }
+  .prize.boom .word {
+    font-family: var(--script);
+    font-weight: 400;
+    font-size: calc(var(--card-size) * 0.25);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  }
+  @keyframes boom {
+    0% { transform: scale(0.6); filter: brightness(2.2); }
+    55% { transform: scale(1.08); filter: brightness(1.2); }
+    100% { transform: scale(1); filter: none; }
+  }
   canvas.cover {
     position: absolute;
     inset: 0;
@@ -101,7 +132,8 @@
   .after {
     min-height: 32px;
     margin: 0;
-    font-size: 22px;
+    font-family: var(--round);
+    font-size: clamp(20px, 6vw, 26px);
     font-weight: 700;
     opacity: 0;
     transform: translateY(8px);
@@ -118,7 +150,7 @@
   </header>
   <div class="ticket">
     <div class="card" id="card">
-      <div class="prize" id="prize"><div class="emoji"></div><div class="text"></div></div>
+      <div class="prize" id="prize"><div class="emoji" id="emoji"></div><div class="word" id="word">?</div></div>
       <canvas class="cover" id="cover"></canvas>
       <div class="glint" id="glint"></div>
     </div>
@@ -128,7 +160,7 @@
 <script>
 (() => {
   // The answer is encoded so it does not show up in a quick look at the source.
-  const P = "IUMcTUxfUx1FCXcNjmItFGDw+vPEiNbBIPmPhYkHABFZY3JtdTldWBNOuKWit/iBkJOb2aCo576Ey9zVlSc2SDgCTkkAWyVzcHVCRAgTHrDp97qzhI7S3aSvtrH8yc7QnGc7ay5/BgcQGiYhKmQ5UEgsBQ==";
+  const P = "IUMcTUxfUx1FCXcNjmItFGDw+vPEiNbBIPmPhYkHABFJY3JtJjQKAFAE";
   const raw = Uint8Array.from(atob(P), (ch, i) => ch.charCodeAt(0) ^ ((0x5a + i * 7) & 255));
   const prize = JSON.parse(new TextDecoder().decode(raw));
 
@@ -138,7 +170,13 @@
   const glint = document.getElementById("glint");
   const ctx = cover.getContext("2d", { willReadFrequently: true });
   const split = new URLSearchParams(location.search).get("cover") === "split";
-  const FONT = "-apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  const FONT = "Fredoka, -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  const word = document.getElementById("word");
+  const emoji = document.getElementById("emoji");
+  const SIDES = {
+    pink: { bg: "#e85d8f", word: "בת", page: "#fde9f1", confetti: ["#e85d8f", "#ff9ec2", "#ffffff", "#ffc9dc", "#d63f78"] },
+    blue: { bg: "#3d8fd6", word: "בן", page: "#e7f2fc", confetti: ["#3d8fd6", "#8cc4f2", "#ffffff", "#c4e0f8", "#2a73b8"] },
+  };
   const BRUSH = 0.075;       // brush radius as a share of the card size
   const OPEN_AT = 0.55;      // share of the card scratched before it opens
   let size = 0, dpr = 1, revealed = false, last = null, moves = 0;
@@ -219,11 +257,7 @@
     embossed("?", `800 ${size * 0.34}px ${FONT}`, size * 0.45);
     embossed("גרדו כאן", `800 ${size * 0.085}px ${FONT}`, size * 0.76);
 
-    // Show the prize only after the cover is painted, so it never flashes.
-    prizeEl.style.background = prize.d;
-    prizeEl.style.color = prize.c;
-    prizeEl.querySelector(".emoji").textContent = prize.e;
-    prizeEl.querySelector(".text").textContent = prize.t;
+    // Show the panel under the foil only after the foil is painted.
     prizeEl.style.visibility = "visible";
   }
 
@@ -391,9 +425,58 @@
     revealed = true;
     silence();
     cover.classList.add("gone");
+    setTimeout(roulette, 650);
+  }
+
+  // Pink and blue swap faster than the eye can follow, slow down, then stop on the answer.
+  function roulette() {
+    const win = prize.s;
+    const lose = win === "pink" ? "blue" : "pink";
+    const delays = [];
+    for (let d = 50; d < 560; d *= 1.13) delays.push(d);
+    const n = delays.length + 1;
+    const first = (n - 1) % 2 === 0 ? win : lose;
+    prizeEl.classList.add("spin");
+    let k = 0;
+    (function step() {
+      const side = k % 2 === 0 ? first : (first === win ? lose : win);
+      prizeEl.style.background = SIDES[side].bg;
+      word.textContent = SIDES[side].word;
+      click();
+      if (navigator.vibrate) navigator.vibrate(6);
+      if (k === n - 1) { setTimeout(() => boom(win), 520); return; }
+      setTimeout(step, delays[k++]);
+    })();
+  }
+
+  function boom(win) {
+    prizeEl.classList.remove("spin");
+    prizeEl.classList.add("boom");
+    word.textContent = prize.t;
+    emoji.textContent = prize.e;
+    document.body.style.backgroundColor = SIDES[win].page;
+    document.querySelector('meta[name="theme-color"]').content = SIDES[win].page;
     document.getElementById("after").classList.add("show");
-    if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
-    confetti(prize.k);
+    thump();
+    if (navigator.vibrate) navigator.vibrate([80, 40, 160]);
+    confetti(SIDES[win].confetti);
+  }
+
+  // Roulette click and the final thump, only if sound was started by the first touch.
+  function click() {
+    if (!audio) return;
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+    o.type = "square"; o.frequency.value = 1900;
+    g.gain.setValueAtTime(0.04, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.04);
+  }
+  function thump() {
+    if (!audio) return;
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+    o.type = "sine";
+    o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.4);
+    g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.65);
   }
 
   function confetti(colors) {
@@ -429,7 +512,9 @@
   cover.addEventListener("pointercancel", end);
   cover.addEventListener("contextmenu", e => e.preventDefault());
 
-  paintCover();
+  // Paint with the round font when it arrives; after 1.5 s use the fallback font.
+  const fontWait = new Promise(res => setTimeout(res, 1500));
+  Promise.race([document.fonts.load(`700 40px Fredoka`), fontWait]).then(paintCover, paintCover);
   sizeFx();
   let resizeTimer;
   addEventListener("resize", () => {
