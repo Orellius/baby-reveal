@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>בן או בת?</title>
 <meta name="description" content="גרדו את הכרטיס וגלו">
-<meta property="og:title" content="בן או בת?">
-<meta property="og:description" content="גרדו את הכרטיס וגלו">
+<meta property="og:title" content="בן או בת? · Мальчик или девочка?">
+<meta property="og:description" content="גרדו את הכרטיס וגלו · Сотрите защитный слой и узнайте">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#fbf7f2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Gveret+Levin&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Gveret+Levin&family=Nunito:wght@600;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fbf7f2;
@@ -22,6 +22,8 @@
     --card-size: min(72vw, 48svh, 340px);
     --round: "Fredoka", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
     --script: "Gveret Levin", "Fredoka", -apple-system, Arial, sans-serif;
+    --ru: "Nunito", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    --ru-script: "Caveat", "Nunito", -apple-system, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -45,6 +47,11 @@
   header { text-align: center; }
   h1 { margin: 0 0 6px; font-family: var(--round); font-size: clamp(34px, 10vw, 52px); font-weight: 700; }
   .sub { margin: 0; font-family: var(--round); font-weight: 500; font-size: clamp(16px, 4.5vw, 19px); color: var(--muted); }
+  /* Russian line under each Hebrew line. */
+  .ru { display: block; font-family: var(--ru); font-weight: 800; unicode-bidi: isolate; }
+  h1 + .ru { margin: 0 0 10px; font-size: clamp(17px, 5vw, 22px); color: var(--ink); }
+  .sub + .ru { margin: 2px 0 0; font-weight: 600; font-size: clamp(13px, 3.8vw, 16px); color: var(--muted); }
+  .after .ru { margin-top: 2px; font-size: clamp(15px, 4.4vw, 18px); }
   @media (max-height: 640px) {
     body { gap: 16px; padding-block: 12px; }
     h1 { font-size: 30px; }
@@ -85,7 +92,10 @@
     font-family: var(--round);
   }
   .prize .emoji { display: none; font-size: calc(var(--card-size) * 0.26); line-height: 1.25; }
-  .prize .word { font-size: calc(var(--card-size) * 0.42); font-weight: 700; line-height: 1.1; }
+  .prize .word { font-size: calc(var(--card-size) * 0.42); font-weight: 700; line-height: 1.2; }
+  .prize .ru { font-size: calc(var(--card-size) * 0.075); }
+  .prize .ru:empty { display: none; }
+  .prize.boom .ru { font-family: var(--ru-script); font-weight: 600; font-size: calc(var(--card-size) * 0.12); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); }
   .prize.spin { color: #fff; }
   .prize.spin .word { font-size: calc(var(--card-size) * 0.36); }
   .prize.boom { color: #fff; animation: boom 0.7s cubic-bezier(.2, 1.6, .4, 1); }
@@ -146,21 +156,23 @@
 <body>
   <header>
     <h1>בן או בת?</h1>
+    <p class="ru" lang="ru" dir="ltr">Мальчик или девочка?</p>
     <p class="sub">גרדו את הכרטיס עם האצבע</p>
+    <p class="ru" lang="ru" dir="ltr">Сотрите защитный слой пальцем</p>
   </header>
   <div class="ticket">
     <div class="card" id="card">
-      <div class="prize" id="prize"><div class="emoji" id="emoji"></div><div class="word" id="word">?</div></div>
+      <div class="prize" id="prize"><div class="emoji" id="emoji"></div><div class="word" id="word">?</div><div class="ru" id="wordRu" lang="ru" dir="ltr"></div></div>
       <canvas class="cover" id="cover"></canvas>
       <div class="glint" id="glint"></div>
     </div>
   </div>
-  <p class="after" id="after">מזל טוב! 🎉</p>
+  <div class="after" id="after">מזל טוב! 🎉<span class="ru" lang="ru" dir="ltr">Поздравляем!</span></div>
   <canvas class="fx" id="fx"></canvas>
 <script>
 (() => {
   // The answer is encoded so it does not show up in a quick look at the source.
-  const P = "IUMcTUxfUx1FCXcNjmItFGDw+vPEiNbBIPmPhYkHABFJY3JtJjQKAFAE";
+  const P = "IUMcTUxfUx1FCXcNjmItFGDw+vPEn9bBINm9xpz1khPq9Zj6hu+01aP+UD1eJb2BhpPdnfzvJERwftLb3HYuKThRQUFdHzk=";
   const raw = Uint8Array.from(atob(P), (ch, i) => ch.charCodeAt(0) ^ ((0x5a + i * 7) & 255));
   const prize = JSON.parse(new TextDecoder().decode(raw));
 
@@ -172,10 +184,11 @@
   const split = new URLSearchParams(location.search).get("cover") === "split";
   const FONT = "Fredoka, -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   const word = document.getElementById("word");
+  const wordRu = document.getElementById("wordRu");
   const emoji = document.getElementById("emoji");
   const SIDES = {
-    pink: { bg: "#e85d8f", word: "בת", page: "#fde9f1", confetti: ["#e85d8f", "#ff9ec2", "#ffffff", "#ffc9dc", "#d63f78"] },
-    blue: { bg: "#3d8fd6", word: "בן", page: "#e7f2fc", confetti: ["#3d8fd6", "#8cc4f2", "#ffffff", "#c4e0f8", "#2a73b8"] },
+    pink: { bg: "#e85d8f", word: "בת", ru: "Девочка", page: "#fde9f1", confetti: ["#e85d8f", "#ff9ec2", "#ffffff", "#ffc9dc", "#d63f78"] },
+    blue: { bg: "#3d8fd6", word: "בן", ru: "Мальчик", page: "#e7f2fc", confetti: ["#3d8fd6", "#8cc4f2", "#ffffff", "#c4e0f8", "#2a73b8"] },
   };
   const BRUSH = 0.075;       // brush radius as a share of the card size
   const OPEN_AT = 0.55;      // share of the card scratched before it opens
@@ -254,8 +267,9 @@
     ctx.stroke();
 
     // Embossed silver label: dark edge below, light edge above, silver face.
-    embossed("?", `800 ${size * 0.34}px ${FONT}`, size * 0.45);
-    embossed("גרדו כאן", `800 ${size * 0.085}px ${FONT}`, size * 0.76);
+    embossed("?", `800 ${size * 0.34}px ${FONT}`, size * 0.42);
+    embossed("גרדו כאן", `800 ${size * 0.085}px ${FONT}`, size * 0.71);
+    embossed("Сотрите здесь", `800 ${size * 0.058}px Nunito, ${FONT}`, size * 0.81);
 
     // Show the panel under the foil only after the foil is painted.
     prizeEl.style.visibility = "visible";
@@ -442,6 +456,7 @@
       const side = k % 2 === 0 ? first : (first === win ? lose : win);
       prizeEl.style.background = SIDES[side].bg;
       word.textContent = SIDES[side].word;
+      wordRu.textContent = SIDES[side].ru;
       click();
       if (navigator.vibrate) navigator.vibrate(6);
       if (k === n - 1) { setTimeout(() => boom(win), 520); return; }
@@ -453,6 +468,7 @@
     prizeEl.classList.remove("spin");
     prizeEl.classList.add("boom");
     word.textContent = prize.t;
+    wordRu.textContent = prize.r;
     emoji.textContent = prize.e;
     document.body.style.backgroundColor = SIDES[win].page;
     document.querySelector('meta[name="theme-color"]').content = SIDES[win].page;
@@ -514,8 +530,12 @@
 
   // Paint with the round font when it arrives; after 1.5 s use the fallback font.
   const fontWait = new Promise(res => setTimeout(res, 1500));
-  Promise.race([document.fonts.load(`700 40px Fredoka`), fontWait]).then(paintCover, paintCover);
+  Promise.race([Promise.all([document.fonts.load(`700 40px Fredoka`), document.fonts.load(`800 40px Nunito`, "Сотрите")]), fontWait]).then(paintCover, paintCover);
   sizeFx();
+  // Load the reveal fonts early, so the final text does not change font on screen.
+  for (const f of ["40px 'Gveret Levin'", "600 40px Caveat"]) {
+    document.fonts.load(f, "זאת Это").catch(err => console.warn("font preload failed", f, err));
+  }
   let resizeTimer;
   addEventListener("resize", () => {
     clearTimeout(resizeTimer);
